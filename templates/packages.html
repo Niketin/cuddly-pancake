@@ -1,0 +1,11 @@
+{% block content %}
+
+<ul>
+  {% for package in packages %}
+  <li>
+    {{ package.name }}
+  </li>
+  {% endfor %}
+</ul>
+
+{% endblock %}
