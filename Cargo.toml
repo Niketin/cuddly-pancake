@@ -1,0 +1,10 @@
+[package]
+name = "package_list"
+version = "0.1.0"
+authors = ["Niketin <Niketin@users.noreply.github.com>"]
+edition = "2018"
+
+[dependencies]
+actix-web = "1.0.9"
+askama = "0.8"
+regex = "1"
