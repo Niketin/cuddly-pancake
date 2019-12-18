@@ -1,4 +1,4 @@
-use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{get, App, HttpResponse, HttpServer, Responder};
 use askama::Template;
 
 #[derive(Template)]
@@ -16,13 +16,13 @@ struct Package<'a> {
 }
 
 #[get("/packages")]
-fn packages_service(info: web::Path<(u32, String)>) -> impl Responder {
+fn packages_service() -> impl Responder {
     let p1 = Package {
-        name: &info.1,
+        name: "name1",
     };
 
     let p2 = Package {
-        name: &info.1,
+        name: "name2",
     };
 
     let template = PackagesTemplate {
