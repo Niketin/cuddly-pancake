@@ -7,7 +7,7 @@ use std::io::{BufRead, BufReader, Lines};
 #[derive(Template)]
 #[template(path = "packages.html")]
 struct PackagesTemplate {
-    packages: Vec<PackageWithUrl>,
+    packages: Vec<Package>,
 }
 
 #[derive(Template)]
@@ -20,32 +20,24 @@ struct PackageTemplate<'a> {
 #[template(path = "index.html")]
 struct Index;
 
+#[derive(Default)]
 struct Package {
     name: String,
     description: Vec<String>,
-}
-
-struct PackageWithUrl {
-    package: Package,
-    url: String,
+    url: Option<String>,
 }
 
 fn packages_service(req: HttpRequest) -> impl Responder {
     let mut packages = get_packages_vec();
     let packages = packages
         .drain(..)
-        .map(|package| {
-            let name = package.name.clone();
-            let res = if let Ok(url) = req.url_for("package", &[name]) {
-                url.into_string()
+        .map(|mut package| {
+            package.url = if let Ok(url) = req.url_for("package", &[&package.name]) {
+                Some(url.into_string())
             } else {
-                String::from("")
+                None
             };
-
-            PackageWithUrl {
-                url: res,
-                package: package,
-            }
+            package
         })
         .collect();
 
@@ -149,7 +141,7 @@ fn read_package_from_file(lines: &mut Lines<BufReader<File>>) -> Result<Package,
             currently_reading_description = false;
         }
     }
-    return Ok(Package { name, description });
+    return Ok(Package { name, description, url: None });
 }
 
 fn main() -> std::io::Result<()> {
