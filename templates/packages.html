@@ -3,7 +3,7 @@
 <ul>
   {% for package in packages %}
   <li>
-    {{ package.name }}
+    <a href="{{package.url}}">{{ package.package.name }}</a>
   </li>
   {% endfor %}
 </ul>

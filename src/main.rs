@@ -1,12 +1,19 @@
-use actix_web::{get, App, HttpResponse, HttpServer, Responder};
+use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use askama::Template;
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Lines};
 
 #[derive(Template)]
 #[template(path = "packages.html")]
 struct PackagesTemplate {
-    packages: Vec<Package>,
+    packages: Vec<PackageWithUrl>,
+}
+
+#[derive(Template)]
+#[template(path = "package.html")]
+struct PackageTemplate<'a> {
+    package: &'a Package,
 }
 
 #[derive(Template)]
@@ -17,12 +24,44 @@ struct Package {
     name: String,
 }
 
-#[get("/packages")]
-fn packages_service() -> impl Responder {
-    let packages = get_packages_vec();
+struct PackageWithUrl {
+    package: Package,
+    url: String,
+}
+
+fn packages_service(req: HttpRequest) -> impl Responder {
+    let mut packages = get_packages_vec();
+    let packages = packages
+        .drain(..)
+        .map(|package| {
+            let name = package.name.clone();
+            let res = if let Ok(url) = req.url_for("package", &[name]) {
+                url.into_string()
+            } else {
+                String::from("")
+            };
+
+            PackageWithUrl {
+                url: res,
+                package: package,
+            }
+        })
+        .collect();
 
     let template = PackagesTemplate { packages }.render().unwrap();
     HttpResponse::Ok().content_type("text/html").body(template)
+}
+
+fn package_service(info: web::Path<String>) -> impl Responder {
+    let packages = get_packages_map();
+
+    let package_name = info.as_ref();
+    if let Some(package) = packages.get(package_name) {
+        let template = PackageTemplate { package }.render().unwrap();
+        return HttpResponse::Ok().content_type("text/html").body(template);
+    } else {
+        return HttpResponse::NotFound().content_type("text/html").finish();
+    }
 }
 
 fn get_lines_from_file(path: &str) -> Lines<BufReader<File>> {
@@ -46,6 +85,19 @@ fn get_packages_vec() -> Vec<Package> {
     return packages;
 }
 
+fn get_packages_map() -> HashMap<String, Package> {
+    let mut packages = HashMap::new();
+    let mut lines = get_lines_from_file("status.real");
+    loop {
+        if let Ok(package) = read_package_from_file(&mut lines) {
+            packages.insert(String::from(package.name.clone()), package);
+        } else {
+            break;
+        }
+    }
+    return packages;
+}
+
 fn read_package_from_file(lines: &mut Lines<BufReader<File>>) -> Result<Package, &'static str> {
     let mut name: String = String::from("");
 
@@ -64,7 +116,7 @@ fn read_package_from_file(lines: &mut Lines<BufReader<File>>) -> Result<Package,
         }
 
         if l == "" && !package_field_read {
-            return Err("No field 'Package' in this paragrpah");
+            return Err("No field 'Package' in this paragraph");
         }
 
         if i == 0 && !l.starts_with("Package: ") {
@@ -80,12 +132,25 @@ fn read_package_from_file(lines: &mut Lines<BufReader<File>>) -> Result<Package,
             package_field_read = true;
         }
     }
-
     return Ok(Package { name });
 }
 
 fn main() -> std::io::Result<()> {
-    HttpServer::new(|| App::new().service(packages_service))
-        .bind("127.0.0.1:8080")?
-        .run()
+    HttpServer::new(|| {
+        App::new().service(
+            web::scope("/packages")
+                .service(
+                    web::resource("/{package_name}")
+                        .name("package")
+                        .route(web::get().to(package_service)),
+                )
+                .service(
+                    web::resource("")
+                        .name("packages")
+                        .route(web::get().to(packages_service)),
+                ),
+        )
+    })
+    .bind("127.0.0.1:8080")?
+    .run()
 }
