@@ -1,7 +1,14 @@
-<div><b>Name:</b> {{ package.name }}</div>
+<div>
+  <p><b>Name:</b></p>
+  <div style="padding-left: 1em;">
+    <p>{{ package.name }}</p>
+  </div>
+</div>
 <div>
   <p><b>Description:</b></p>
-  {% for description in package.description %}
-  <p>{{ description }}</p>
-  {% endfor %}
+  <div style="padding-left: 1em;">
+    {% for description in package.description %}
+    <p>{{ description }}</p>
+    {% endfor %}
+  </div>
 </div>
