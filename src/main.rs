@@ -22,6 +22,7 @@ struct Index;
 
 struct Package {
     name: String,
+    description: Vec<String>,
 }
 
 struct PackageWithUrl {
@@ -100,9 +101,11 @@ fn get_packages_map() -> HashMap<String, Package> {
 
 fn read_package_from_file(lines: &mut Lines<BufReader<File>>) -> Result<Package, &'static str> {
     let mut name: String = String::from("");
+    let mut description: Vec<String> = vec![];
 
     // Read a paragraph
     let mut package_field_read = false;
+    let mut currently_reading_description = false;
     let mut llines = lines.peekable();
     if let Some(_) = llines.peek() {
     } else {
@@ -130,9 +133,23 @@ fn read_package_from_file(lines: &mut Lines<BufReader<File>>) -> Result<Package,
                 .filter(|&(i, _)| i == 1)
                 .for_each(|(_, v)| name = String::from(v));
             package_field_read = true;
+            continue;
+        } else if l.starts_with("Description: ") {
+            split_iter
+                .enumerate()
+                .filter(|&(i, _)| i == 1)
+                .for_each(|(_, v)| description.push(String::from(v)));
+            currently_reading_description = true;
+            continue;
+        }
+
+        if currently_reading_description && l.starts_with(" ") {
+            description.push(String::from(l.trim_start()));
+        } else if currently_reading_description && !l.starts_with(" ") {
+            currently_reading_description = false;
         }
     }
-    return Ok(Package { name });
+    return Ok(Package { name, description });
 }
 
 fn main() -> std::io::Result<()> {
