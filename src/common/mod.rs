@@ -1,18 +1,17 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Lines};
-use std::cell::RefCell;
 
 pub struct AppData {
     pub packages_vec: RefCell<Vec<Package>>,
-    pub packages_map: RefCell<HashMap<String, Package>>
+    pub packages_map: RefCell<HashMap<String, Package>>,
 }
 
 #[derive(Default)]
 pub struct Package {
     pub name: String,
     pub description: Vec<String>,
-    pub url: Option<String>,
     pub dependencies: Vec<Vec<String>>,
 }
 
@@ -107,7 +106,6 @@ fn read_package_from_file(lines: &mut Lines<BufReader<File>>) -> Result<Package,
     return Ok(Package {
         name,
         description,
-        url: None,
         dependencies,
     });
 }

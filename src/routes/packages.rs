@@ -11,20 +11,21 @@ struct Index;
 #[template(path = "packages.html")]
 struct PackagesTemplate<'a> {
     packages: Vec<&'a Package>,
+    urls: Vec<Option<String>>,
 }
 
 pub fn packages_handler(req: HttpRequest, data: Data<AppData>) -> impl Responder {
-    let mut packages = data.packages_vec.borrow_mut();
-
-    for ref mut package in packages.iter_mut() {
-        package.url = if let Ok(url) = req.url_for("package", &[&package.name]) {
-            Some(url.into_string())
+    let packages = data.packages_vec.borrow();
+    let mut urls = vec![];
+    for package in packages.iter() {
+        if let Ok(url) = req.url_for("package", &[&package.name]) {
+            urls.push(Some(url.into_string()));
         } else {
-            None
+            urls.push(None)
         };
     }
     let packages: Vec<&Package> = packages.iter().map(|x| x).collect();
 
-    let template = PackagesTemplate { packages }.render().unwrap();
+    let template = PackagesTemplate { packages, urls }.render().unwrap();
     HttpResponse::Ok().content_type("text/html").body(template)
 }

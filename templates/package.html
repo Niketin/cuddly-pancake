@@ -18,9 +18,14 @@
     {% for dependency in package.dependencies %}
     <li>
       {% for alternative in dependency %}
-        {% if loop.index != 1 %} | {% endif %}
-        {{ alternative }}
-      {% endfor %}  
+      {% if loop.index != 1 %} | {% endif %}
+      {% let url = urls.get(alternative).unwrap() %}
+      {% if url.is_some() %}
+      <a href={{url.as_ref().unwrap()}}>{{ alternative }}</a>
+      {% else %}
+      {{ alternative }}
+      {% endif %}
+      {% endfor %}
     </li>
     {% endfor %}
   </ul>

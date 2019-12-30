@@ -3,8 +3,8 @@
 <ul>
   {% for package in packages %}
   <li>
-    {% if package.url.is_some() %}
-    <a href="{{package.url.as_ref().unwrap()}}">{{ package.name }}</a>
+    {% if urls.get(loop.index0).is_some() %}
+    <a href="{{urls.get(loop.index0).unwrap().as_ref().unwrap()}}">{{ package.name }}</a>
     {% else %}
     {{ package.name }}
     {% endif %}
