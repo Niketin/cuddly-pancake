@@ -16,9 +16,12 @@
   <p><b>Dependencies:</b></p>
   <ul>
     {% for dependency in package.dependencies %}
+    <li>
       {% for alternative in dependency %}
-        <li>{{ alternative }}</li>
+        {% if loop.index != 1 %} | {% endif %}
+        {{ alternative }}
       {% endfor %}  
+    </li>
     {% endfor %}
   </ul>
 </div>
