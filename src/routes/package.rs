@@ -1,7 +1,7 @@
+use crate::common::*;
+use crate::web::Data;
 use actix_web::{web, HttpResponse, Responder};
 use askama::Template;
-
-use crate::common::*;
 
 #[derive(Template)]
 #[template(path = "package.html")]
@@ -9,8 +9,8 @@ struct PackageTemplate<'a> {
     package: &'a Package,
 }
 
-pub fn package_handler(info: web::Path<String>) -> impl Responder {
-    let packages = get_packages_map();
+pub fn package_handler(info: web::Path<String>, data: Data<AppData>) -> impl Responder {
+    let packages = data.packages_map.borrow();
 
     let package_name = info.as_ref();
     if let Some(package) = packages.get(package_name) {

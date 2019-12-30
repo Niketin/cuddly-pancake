@@ -1,6 +1,12 @@
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Lines};
+use std::cell::RefCell;
+
+pub struct AppData {
+    pub packages_vec: RefCell<Vec<Package>>,
+    pub packages_map: RefCell<HashMap<String, Package>>
+}
 
 #[derive(Default)]
 pub struct Package {
