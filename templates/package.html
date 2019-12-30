@@ -12,3 +12,13 @@
     {% endfor %}
   </div>
 </div>
+<div>
+  <p><b>Dependencies:</b></p>
+  <ul>
+    {% for dependency in package.dependencies %}
+      {% for alternative in dependency %}
+        <li>{{ alternative }}</li>
+      {% endfor %}  
+    {% endfor %}
+  </ul>
+</div>

@@ -7,6 +7,7 @@ pub struct Package {
     pub name: String,
     pub description: Vec<String>,
     pub url: Option<String>,
+    pub dependencies: Vec<Vec<String>>,
 }
 
 pub fn get_packages_vec() -> Vec<Package> {
@@ -46,6 +47,7 @@ fn get_lines_from_file(path: &str) -> Lines<BufReader<File>> {
 fn read_package_from_file(lines: &mut Lines<BufReader<File>>) -> Result<Package, &'static str> {
     let mut name: String = String::from("");
     let mut description: Vec<String> = vec![];
+    let mut dependencies: Vec<Vec<String>> = vec![];
 
     // Read a paragraph
     let mut package_field_read = false;
@@ -92,10 +94,37 @@ fn read_package_from_file(lines: &mut Lines<BufReader<File>>) -> Result<Package,
         } else if currently_reading_description && !l.starts_with(" ") {
             currently_reading_description = false;
         }
+        if l.starts_with("Depends: ") {
+            dependencies = parse_dependencies(l.trim_start_matches("Depends: "));
+        }
     }
     return Ok(Package {
         name,
         description,
         url: None,
+        dependencies,
     });
+}
+
+fn parse_dependencies(input: &str) -> Vec<Vec<String>> {
+    let dependencies: Vec<&str> = input.split(",").collect();
+    let mut results: Vec<Vec<String>> = vec![];
+    for dep in dependencies {
+        let alternatives: Vec<&str> = dep.split("|").collect();
+        let alternatives_trimmed: Vec<String> = alternatives
+            .into_iter()
+            .map(|x| {
+                if let Some(i) = x.find("(") {
+                    &x[..i]
+                } else {
+                    &x[..]
+                }
+            })
+            .map(|x| String::from(x.trim()))
+            .collect();
+        if alternatives_trimmed.len() > 0 {
+            results.push(alternatives_trimmed);
+        }
+    }
+    results
 }
