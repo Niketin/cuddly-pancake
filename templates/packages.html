@@ -4,9 +4,9 @@
   {% for package in packages %}
   <li>
     {% if urls.get(loop.index0).is_some() %}
-    <a href="{{urls.get(loop.index0).unwrap().as_ref().unwrap()}}">{{ package.name }}</a>
+    <a href="{{urls.get(loop.index0).unwrap().as_ref().unwrap()}}">{{ package.borrow().name.as_str() }}</a>
     {% else %}
-    {{ package.name }}
+    {{ package.borrow().name.as_str() }}
     {% endif %}
   </li>
   {% endfor %}

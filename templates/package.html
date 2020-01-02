@@ -17,15 +17,21 @@
   <ul>
     {% for dependency in package.dependencies %}
     <li>
+
       {% for alternative in dependency %}
+
       {% if loop.index != 1 %} | {% endif %}
-      {% let url = urls.get(alternative).unwrap() %}
+
+      {% let url = urls.get(alternative.borrow().name.as_str()).unwrap() %}
       {% if url.is_some() %}
-      <a href={{url.as_ref().unwrap()}}>{{ alternative }}</a>
+      <a href={{url.as_ref().unwrap()}}>{{ alternative.borrow().name.as_str() }}</a>
       {% else %}
-      {{ alternative }}
+      {{ alternative.borrow().name.as_str() }}
       {% endif %}
+
       {% endfor %}
+
+
     </li>
     {% endfor %}
   </ul>

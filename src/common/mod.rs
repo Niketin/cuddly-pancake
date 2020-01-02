@@ -2,44 +2,87 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Lines};
+use std::rc::Rc;
 
 pub struct AppData {
-    pub packages_vec: RefCell<Vec<Package>>,
-    pub packages_map: RefCell<HashMap<String, Package>>,
+    pub packages_vec: Vec<Rc<RefCell<Package>>>,
+    pub packages_hashmap: HashMap<String, Rc<RefCell<Package>>>,
+}
+
+impl Default for AppData {
+    fn default() -> Self {
+        let packages_hashmap = get_packages_hashmap();
+        let packages_vec = get_packages_vec(&packages_hashmap);
+        Self {
+            packages_vec,
+            packages_hashmap,
+        }
+    }
 }
 
 #[derive(Default)]
 pub struct Package {
     pub name: String,
     pub description: Vec<String>,
-    pub dependencies: Vec<Vec<String>>,
+    pub dependencies: Vec<Vec<Rc<RefCell<Package>>>>,
+    pub installed: bool,
 }
 
-pub fn get_packages_vec() -> Vec<Package> {
-    let mut packages = vec![];
+pub fn get_packages_vec(
+    packages: &HashMap<String, Rc<RefCell<Package>>>,
+) -> Vec<Rc<RefCell<Package>>> {
+    let mut packages: Vec<Rc<RefCell<Package>>> = packages
+        .iter()
+        .map(|(_, package)| package.clone())
+        .collect();
+    packages.sort_by(|a, b| a.borrow().name.cmp(&b.borrow().name));
+    return packages;
+}
+
+pub fn get_packages_hashmap() -> HashMap<String, Rc<RefCell<Package>>> {
+    let mut map: HashMap<String, Rc<RefCell<Package>>> = HashMap::new();
     let mut lines = get_lines_from_file("status.real");
     loop {
-        if let Ok(package) = read_package_from_file(&mut lines) {
-            packages.push(package);
+        if let Ok((package, dependencies_strings)) = read_package_from_file(&mut lines) {
+            let mut dependencies_packages: Vec<Vec<Rc<RefCell<Package>>>> = vec![];
+            for alternatives_strings in dependencies_strings {
+                let mut alternative_packages: Vec<Rc<RefCell<Package>>> = vec![];
+                for alternative_string in alternatives_strings {
+                    if map.contains_key(&alternative_string) {
+                        if let Some(alternative_package) = map.get(&alternative_string) {
+                            alternative_packages.push(alternative_package.clone());
+                        }
+                    } else {
+                        let alternative_package = Rc::new(RefCell::new(Package {
+                            name: String::from(&alternative_string),
+                            description: vec![],
+                            dependencies: vec![],
+                            installed: false,
+                        }));
+                        map.insert(
+                            String::from(&alternative_string),
+                            alternative_package.clone(),
+                        );
+                        alternative_packages.push(alternative_package);
+                    }
+                }
+                dependencies_packages.push(alternative_packages);
+            }
+            if let Some(p) = map.get(&package.name) {
+                p.borrow_mut().installed = true;
+                p.borrow_mut().dependencies = dependencies_packages;
+                p.borrow_mut().description = package.description.clone();
+            } else {
+                let new_package = Rc::new(RefCell::new(package));
+                new_package.borrow_mut().dependencies = dependencies_packages;
+                let key = String::from(&new_package.borrow().name);
+                map.insert(key, new_package);
+            }
         } else {
             break;
         }
     }
-    packages.sort_by(|a, b| a.name.cmp(&b.name));
-    return packages;
-}
-
-pub fn get_packages_map() -> HashMap<String, Package> {
-    let mut packages = HashMap::new();
-    let mut lines = get_lines_from_file("status.real");
-    loop {
-        if let Ok(package) = read_package_from_file(&mut lines) {
-            packages.insert(String::from(package.name.clone()), package);
-        } else {
-            break;
-        }
-    }
-    return packages;
+    return map;
 }
 
 fn get_lines_from_file(path: &str) -> Lines<BufReader<File>> {
@@ -49,7 +92,9 @@ fn get_lines_from_file(path: &str) -> Lines<BufReader<File>> {
     return lines;
 }
 
-fn read_package_from_file(lines: &mut Lines<BufReader<File>>) -> Result<Package, &'static str> {
+fn read_package_from_file(
+    lines: &mut Lines<BufReader<File>>,
+) -> Result<(Package, Vec<Vec<String>>), &'static str> {
     let mut name: String = String::from("");
     let mut description: Vec<String> = vec![];
     let mut dependencies: Vec<Vec<String>> = vec![];
@@ -103,11 +148,16 @@ fn read_package_from_file(lines: &mut Lines<BufReader<File>>) -> Result<Package,
             dependencies = parse_dependencies(l.trim_start_matches("Depends: "));
         }
     }
-    return Ok(Package {
-        name,
-        description,
+
+    return Ok((
+        Package {
+            name,
+            description,
+            dependencies: vec![],
+            installed: true,
+        },
         dependencies,
-    });
+    ));
 }
 
 fn parse_dependencies(input: &str) -> Vec<Vec<String>> {

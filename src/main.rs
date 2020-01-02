@@ -1,5 +1,4 @@
 use actix_web::{web, App, HttpServer};
-use std::cell::RefCell;
 
 mod common;
 mod routes;
@@ -7,10 +6,7 @@ mod routes;
 fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
-            .data(common::AppData {
-                packages_vec: RefCell::new(common::get_packages_vec()),
-                packages_map: RefCell::new(common::get_packages_map()),
-            })
+            .data(common::AppData::default())
             .service(
                 web::resource("/")
                     .name("packages")
