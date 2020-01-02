@@ -25,6 +25,7 @@ pub struct Package {
     pub name: String,
     pub description: Vec<String>,
     pub dependencies: Vec<Vec<Rc<RefCell<Package>>>>,
+    pub reverse_dependencies: Vec<Rc<RefCell<Package>>>,
     pub installed: bool,
 }
 
@@ -43,20 +44,37 @@ pub fn get_packages_hashmap() -> HashMap<String, Rc<RefCell<Package>>> {
     let mut map: HashMap<String, Rc<RefCell<Package>>> = HashMap::new();
     let mut lines = get_lines_from_file("status.real");
     loop {
-        if let Ok((package, dependencies_strings)) = read_package_from_file(&mut lines) {
+        if let Ok((package_from_file, dependencies_strings)) = read_package_from_file(&mut lines) {
+            let package: Rc<RefCell<Package>> = if let Some(p) = map.get(&package_from_file.name) {
+                p.borrow_mut().installed = true;
+                p.borrow_mut().description = package_from_file.description.clone();
+                p.clone()
+            } else {
+                let new_package = Rc::new(RefCell::new(package_from_file));
+                let key = String::from(&new_package.borrow().name);
+                map.insert(key, new_package.clone());
+                new_package
+            };
+
             let mut dependencies_packages: Vec<Vec<Rc<RefCell<Package>>>> = vec![];
             for alternatives_strings in dependencies_strings {
                 let mut alternative_packages: Vec<Rc<RefCell<Package>>> = vec![];
                 for alternative_string in alternatives_strings {
                     if map.contains_key(&alternative_string) {
                         if let Some(alternative_package) = map.get(&alternative_string) {
-                            alternative_packages.push(alternative_package.clone());
+                            let alternative_package_clone = alternative_package.clone();
+                            alternative_package_clone
+                                .borrow_mut()
+                                .reverse_dependencies
+                                .push(package.clone());
+                            alternative_packages.push(alternative_package_clone);
                         }
                     } else {
                         let alternative_package = Rc::new(RefCell::new(Package {
                             name: String::from(&alternative_string),
                             description: vec![],
                             dependencies: vec![],
+                            reverse_dependencies: vec![package.clone()],
                             installed: false,
                         }));
                         map.insert(
@@ -68,16 +86,8 @@ pub fn get_packages_hashmap() -> HashMap<String, Rc<RefCell<Package>>> {
                 }
                 dependencies_packages.push(alternative_packages);
             }
-            if let Some(p) = map.get(&package.name) {
-                p.borrow_mut().installed = true;
-                p.borrow_mut().dependencies = dependencies_packages;
-                p.borrow_mut().description = package.description.clone();
-            } else {
-                let new_package = Rc::new(RefCell::new(package));
-                new_package.borrow_mut().dependencies = dependencies_packages;
-                let key = String::from(&new_package.borrow().name);
-                map.insert(key, new_package);
-            }
+
+            package.borrow_mut().dependencies = dependencies_packages;
         } else {
             break;
         }
@@ -154,6 +164,7 @@ fn read_package_from_file(
             name,
             description,
             dependencies: vec![],
+            reverse_dependencies: vec![],
             installed: true,
         },
         dependencies,

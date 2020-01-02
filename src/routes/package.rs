@@ -36,6 +36,19 @@ pub fn package_handler(
             }
         }
 
+        for rev_dep in &package.borrow().reverse_dependencies {
+            let url: Option<String> = if rev_dep.borrow().installed {
+                if let Ok(url) = req.url_for("package", &[&rev_dep.borrow().name]) {
+                    Some(url.into_string())
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+            urls.insert(rev_dep.borrow().name.clone(), url);
+        }
+
         let template = PackageTemplate {
             package: package.clone().borrow(),
             urls,

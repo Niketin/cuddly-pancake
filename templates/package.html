@@ -17,7 +17,6 @@
   <ul>
     {% for dependency in package.dependencies %}
     <li>
-
       {% for alternative in dependency %}
 
       {% if loop.index != 1 %} | {% endif %}
@@ -30,8 +29,21 @@
       {% endif %}
 
       {% endfor %}
-
-
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+<div>
+  <p><b>Reverse dependencies:</b></p>
+  <ul>
+    {% for rev_dep in package.reverse_dependencies %}
+    <li>
+      {% let url = urls.get(rev_dep.borrow().name.as_str()).unwrap() %}
+      {% if url.is_some() %}
+      <a href={{url.as_ref().unwrap()}}>{{ rev_dep.borrow().name.as_str() }}</a>
+      {% else %}
+      {{ rev_dep.borrow().name.as_str() }}
+      {% endif %}
     </li>
     {% endfor %}
   </ul>
