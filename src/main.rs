@@ -9,7 +9,6 @@ fn main() -> std::io::Result<()> {
         .expect("PORT variable must be set")
         .parse()
         .expect("PORT must be a number");
-        
 
     HttpServer::new(|| {
         App::new()
@@ -25,6 +24,6 @@ fn main() -> std::io::Result<()> {
                     .route(web::get().to(routes::package_handler)),
             )
     })
-    .bind(("127.0.0.1", port))?
+    .bind(("0.0.0.0", port))?
     .run()
 }
