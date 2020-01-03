@@ -7,32 +7,32 @@ on:
       branches:
         - master
   
-  jobs:
-    deploy:
-      runs-on: ubuntu-latest
-      if: github.event.pull_request.merged
-  
-      steps:
-        - name: checkout
-          if: github.event.pull_request.merged
-          uses: actions/checkout@v1
-          with:
-            ref: master
-        - name: login
-        uses: actions/heroku@master
-        env:
-            HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged
+
+    steps:
+    - name: checkout
+        if: github.event.pull_request.merged
+        uses: actions/checkout@v1
         with:
-            args: container:login
-        - name: push
-        uses: actions/heroku@master
-        env:
-            HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-        with:
-            args: container:push -a cuddly-pancake web
-        - name: release
-        uses: actions/heroku@master
-        env:
-            HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-        with:
-            args: container:release -a cuddly-pancake web
+        ref: master
+    - name: login
+    uses: actions/heroku@master
+    env:
+        HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+    with:
+        args: container:login
+    - name: push
+    uses: actions/heroku@master
+    env:
+        HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+    with:
+        args: container:push -a cuddly-pancake web
+    - name: release
+    uses: actions/heroku@master
+    env:
+        HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+    with:
+        args: container:release -a cuddly-pancake web
