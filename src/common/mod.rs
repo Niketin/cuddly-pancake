@@ -112,15 +112,15 @@ fn read_package_from_file(
     // Read a paragraph
     let mut package_field_read = false;
     let mut currently_reading_description = false;
-    let mut llines = lines.peekable();
-    if let Some(_) = llines.peek() {
+    let mut lines_peekable = lines.peekable();
+    if let Some(_) = lines_peekable.peek() {
     } else {
         return Err("There is nothing to read anymore");
     }
-    for (i, line) in llines.enumerate() {
+    for line in lines_peekable {
         let l: String = line.unwrap();
         if l == "" && package_field_read {
-            // End of paragraph
+            // End of the paragraph
             break;
         }
 
@@ -128,20 +128,15 @@ fn read_package_from_file(
             return Err("No field 'Package' in this paragraph");
         }
 
-        if i == 0 && !l.starts_with("Package: ") {
-            return Err("First line did not have field 'Package'");
-        }
-
-        let split_iter = l.split_ascii_whitespace();
-        if i == 0 {
-            split_iter
+        if l.starts_with("Package: ") {
+            l.split_ascii_whitespace()
                 .enumerate()
                 .filter(|&(i, _)| i == 1)
                 .for_each(|(_, v)| name = String::from(v));
             package_field_read = true;
             continue;
         } else if l.starts_with("Description: ") {
-            split_iter
+            l.split_ascii_whitespace()
                 .enumerate()
                 .filter(|&(i, _)| i == 1)
                 .for_each(|(_, v)| description.push(String::from(v)));
