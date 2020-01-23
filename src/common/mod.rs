@@ -9,9 +9,9 @@ pub struct AppData {
     pub packages_hashmap: HashMap<String, Rc<RefCell<Package>>>,
 }
 
-impl Default for AppData {
-    fn default() -> Self {
-        let packages_hashmap = get_packages_hashmap();
+impl AppData {
+    pub fn new_from_path(path: &str) -> Self {
+        let packages_hashmap = get_packages_hashmap(path);
         let packages_vec = get_packages_vec(&packages_hashmap);
         Self {
             packages_vec,
@@ -40,9 +40,10 @@ pub fn get_packages_vec(
     return packages;
 }
 
-pub fn get_packages_hashmap() -> HashMap<String, Rc<RefCell<Package>>> {
+pub fn get_packages_hashmap(path: &str) -> HashMap<String, Rc<RefCell<Package>>> {
     let mut map: HashMap<String, Rc<RefCell<Package>>> = HashMap::new();
-    let mut lines = get_lines_from_file("status.real");
+    let mut lines = get_lines_from_file(path);
+
     loop {
         if let Ok((package_from_file, dependencies_strings)) = read_package_from_file(&mut lines) {
             let package: Rc<RefCell<Package>> = if let Some(p) = map.get(&package_from_file.name) {
@@ -96,10 +97,13 @@ pub fn get_packages_hashmap() -> HashMap<String, Rc<RefCell<Package>>> {
 }
 
 fn get_lines_from_file(path: &str) -> Lines<BufReader<File>> {
-    let f = File::open(path).unwrap();
-    let file = BufReader::new(f);
-    let lines = file.lines();
-    return lines;
+    if let Ok(f) = File::open(path) {
+        let file = BufReader::new(f);
+        let lines = file.lines();
+        return lines;
+    } else {
+        panic!("Could not read file from path: {}", path)
+    }
 }
 
 fn read_package_from_file(
