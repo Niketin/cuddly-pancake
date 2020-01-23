@@ -1,7 +1,6 @@
 # cuddly-pancake
-Reaktor pre-assignment
-
-# info about the assignment
+This is my implementation of the 
+Pre-assignment for junior developer positions
 https://www.reaktor.com/junior-dev-assignment/
 
 # deployed webserver
